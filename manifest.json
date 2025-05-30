@@ -1,0 +1,10 @@
+{
+  "name": "WhereItIs",
+  "description": "Natural language queries to map pins/areas.",
+  "version": "1.0",
+  "manifest_version": 3,
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": "icon.png"
+  }
+}
