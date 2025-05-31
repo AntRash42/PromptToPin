@@ -1,0 +1,36 @@
+# ======================
+# General
+# ======================
+node_modules/
+dist/
+build/
+.env
+.env.*.local
+*.log
+
+# Ignore .DS_Store (macOS), Thumbs.db (Windows)
+.DS_Store
+Thumbs.db
+ehthumbs.db
+
+# Ignore IDE/editor folders
+.vscode/
+.idea/
+*.swp
+
+# ======================
+# Frontend (React/Vite/CRA)
+# ======================
+frontend/node_modules/
+frontend/dist/
+frontend/build/
+frontend/.env
+frontend/.env.*.local
+
+# ======================
+# Backend (Node/Express)
+# ======================
+backend/node_modules/
+backend/dist/
+backend/.env
+backend/.env.*.local
