@@ -20,6 +20,14 @@ mkdir "backend\middleware"
 mkdir "backend\controllers"
 mkdir "backend\routes"
 
+echo { > "backend\package.json"
+  echo "name": "my-backend", >> "backend\package.json"
+  echo "version": "1.0.0", >> "backend\package.json"
+  echo "scripts": { >> "backend\package.json"
+    echo "dev": "node server.js" >> "backend\package.json"
+  echo } >> "backend\package.json"
+echo } >> "backend\package.json"
+
 REM --- 3) Frontend folders ---
 mkdir "frontend"
 mkdir "frontend\public"
@@ -30,7 +38,7 @@ mkdir "frontend\src\components"
 mkdir "frontend\src\pages"
 
 REM --- 4) Backend files ---
-type nul > "backend\server.js"
+echo console.log("Hello World") > "backend\server.js"
 type nul > "backend\.env"
 type nul > "backend\config\db.js"
 
