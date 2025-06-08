@@ -32,14 +32,6 @@ export default function MapComponent() {
     mapRef.current = map;
   }, []);
 
-  // Example: List of coordinates to place pins
-  const coordsList = [
-    { lat: 28.6139, lng: 77.2090 }, // New Delhi
-    { lat: 19.076, lng: 72.8777 }, // Mumbai
-    { lat: 13.0827, lng: 80.2707 }, // Chennai
-    { lat: 22.5726, lng: 88.3639 }, // Kolkata
-  ];
-
   const addMarkers = () => {
     setMarkers((prev) => [...prev, ...coordsList]);
     if (mapRef.current) {
@@ -62,6 +54,13 @@ export default function MapComponent() {
       });
       const data = await res.json();
       console.log("API response:", data);
+      // Extract coords and set markers
+      if (data.json && typeof data.json === 'object') {
+        const coords = Object.values(data.json)
+          .map(val => Array.isArray(val) && val[0] && typeof val[0] === 'object' ? val[0] : null)
+          .filter(Boolean);
+        setMarkers(coords);
+      }
     } catch (err) {
       console.error("API error:", err);
     }
