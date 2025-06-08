@@ -24,6 +24,7 @@ export default function MapComponent() {
   });
 
   const [markers, setMarkers] = useState([]);
+  const [prompt, setPrompt] = useState("");
   const mapRef = useRef(null);
   const markerRefs = useRef([]);
 
@@ -45,6 +46,24 @@ export default function MapComponent() {
       const currentZoom = mapRef.current.getZoom();
       const targetZoom = Math.max(currentZoom - 2, 2);
       mapRef.current.setZoom(targetZoom);
+    }
+  };
+
+  const handlePromptChange = (e) => setPrompt(e.target.value);
+
+  const handlePromptSubmit = async (e) => {
+    e.preventDefault();
+    if (!prompt.trim()) return;
+    try {
+      const res = await fetch("http://localhost:5000/api/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt }),
+      });
+      const data = await res.json();
+      console.log("API response:", data);
+    } catch (err) {
+      console.error("API error:", err);
     }
   };
 
@@ -92,6 +111,22 @@ export default function MapComponent() {
         }}
       />
       <div className="mt-4 text-center">
+        <form onSubmit={handlePromptSubmit} className="mb-4">
+          <textarea
+            value={prompt}
+            onChange={handlePromptChange}
+            placeholder="Enter your prompt here..."
+            rows={3}
+            className="w-full max-w-xl p-2 border rounded mb-2"
+          />
+          <br />
+          <button
+            type="submit"
+            className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 mr-2"
+          >
+            Send Prompt
+          </button>
+        </form>
         <button
           onClick={addMarkers}
           className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
