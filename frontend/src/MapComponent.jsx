@@ -52,8 +52,10 @@ export default function MapComponent() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ prompt }),
       });
-      const data = await res.json();
+      const dataObj = await res.json();
+      const data = dataObj.json
       console.log("API response:", data);
+      
       // Extract coords and set markers
       if (data.json && typeof data.json === 'object') {
         const coords = Object.values(data.json)

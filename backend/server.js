@@ -3,6 +3,7 @@ import OpenAI from "openai";
 import express from "express";
 import cors from "cors";
 import getData from "./utils/getData.js";
+import getFullCoords from "./utils/getCoords.js";
 
 configDotenv();
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY_;
@@ -19,8 +20,12 @@ app.post("/api/generate", async (req, res) => {
     if (!prompt) {
       return res.status(400).json({ error: "Prompt is required" });
     }
-    const response = await getData(prompt);
-    res.json({ output: response.raw, json: response.json });
+    // const response = await getData(prompt);
+    const response = await getFullCoords(prompt);
+    console.log("Response from getFullCoords:", response);
+    console.log("Raw Response from getFullCoords:", response.raw);
+    console.log("JSON Response from getFullCoords:", response.json);
+    res.json({ output: response.raw, json: response });
   } catch (err) {
     res.status(500).json({ error: err.message || "OpenAI error" });
   }
