@@ -21,10 +21,11 @@ app.post("/api/generate", async (req, res) => {
       return res.status(400).json({ error: "Prompt is required" });
     }
     // const response = await getData(prompt);
+    console.log("Received prompt:", prompt);
     const response = await getFullCoords(prompt);
     console.log("Response from getFullCoords:", response);
-    console.log("Raw Response from getFullCoords:", response.raw);
-    console.log("JSON Response from getFullCoords:", response.json);
+    // console.log("Raw Response from getFullCoords:", response.raw);
+    // console.log("JSON Response from getFullCoords:", response.json);
     res.json({ output: response.raw, json: response });
   } catch (err) {
     res.status(500).json({ error: err.message || "OpenAI error" });
