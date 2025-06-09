@@ -22,7 +22,6 @@ app.post("/api/generate", async (req, res) => {
     console.log("Received prompt:", prompt);
     const response = await getFullCoords(prompt);
     console.log("Response from getFullCoords:", response);
-    
     res.json({ output: response.raw, json: response });
   } catch (err) {
     res.status(500).json({ error: err.message || "OpenAI error" });

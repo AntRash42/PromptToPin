@@ -1,16 +1,14 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { GoogleMap, useLoadScript } from '@react-google-maps/api';
 
-// Static constant for libraries (to avoid re-renders and warning)
 const libraries = ['marker'];
 
-// Default centre
 const center = {
   lat: 20,
   lng: 0,
 };
 
-const zoom = 2.2; // Default zoom level
+const zoom = 2.2;
 
 const containerStyle = {
   width: '100%',
@@ -24,7 +22,9 @@ export default function MapComponent() {
   });
 
   const [markers, setMarkers] = useState([]);
+  const [markerDescriptions, setMarkerDescriptions] = useState([]);
   const [prompt, setPrompt] = useState("");
+  const [loading, setLoading] = useState(false);
   const mapRef = useRef(null);
   const markerRefs = useRef([]);
 
@@ -46,46 +46,62 @@ export default function MapComponent() {
   const handlePromptSubmit = async (e) => {
     e.preventDefault();
     if (!prompt.trim()) return;
+    setLoading(true);
     try {
-      // Call backend endpoint that uses getCoords to get coordinates for places
       const res = await fetch("http://localhost:5000/api/coords", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ prompt }),
       });
       const data = await res.json();
-      console.log("Coords API response:", data);
-      // Extract coordinates from the response and set as markers
       if (data && typeof data === 'object') {
-        // Each value: [tag, comment, [lat, lng], ...]
-        const coords = Object.values(data)
-          .map(val => Array.isArray(val) && Array.isArray(val[2]) ? { lat: Number(val[2][0]), lng: Number(val[2][1]) } : null)
-          .filter(Boolean);
+        const coords = [];
+        const descriptions = [];
+        Object.values(data).forEach(val => {
+          if (Array.isArray(val) && Array.isArray(val[2])) {
+            const lat = parseFloat(val[2][0]);
+            const lng = parseFloat(val[2][1]);
+            if (!isNaN(lat) && !isNaN(lng)) {
+              coords.push({ lat, lng });
+              descriptions.push(val[1] || "");
+            }
+          }
+        });
         setMarkers(coords);
+        setMarkerDescriptions(descriptions);
       }
     } catch (err) {
       console.error("API error:", err);
+    } finally {
+      setLoading(false);
     }
   };
 
   useEffect(() => {
     if (!isLoaded || !mapRef.current || !window.google?.maps?.marker) return;
-
-    // Clean up previous markers
     markerRefs.current.forEach((marker) => marker.setMap(null));
     markerRefs.current = [];
-
-    const { AdvancedMarkerElement } = window.google.maps.marker;
-
-    markers.forEach((pos) => {
-      const marker = new AdvancedMarkerElement({
-        map: mapRef.current,
-        position: pos,
-        title: 'Advanced Marker',
+    const { AdvancedMarkerElement, PinElement, InfoWindow } = window.google.maps.marker || {};
+    if (markers.length > 0) {
+      markers.forEach((pos, idx) => {
+        if (pos && typeof pos.lat === 'number' && typeof pos.lng === 'number' && !isNaN(pos.lat) && !isNaN(pos.lng)) {
+          const marker = new AdvancedMarkerElement({
+            map: mapRef.current,
+            position: pos,
+            title: markerDescriptions[idx] || '',
+          });
+          if (markerDescriptions[idx]) {
+            const infoWindow = new window.google.maps.InfoWindow({
+              content: `<div style='max-width:220px;white-space:pre-line;'>${markerDescriptions[idx]}</div>`
+            });
+            marker.addListener('mouseover', () => infoWindow.open({ anchor: marker, map: mapRef.current }));
+            marker.addListener('mouseout', () => infoWindow.close());
+          }
+          markerRefs.current.push(marker);
+        }
       });
-      markerRefs.current.push(marker);
-    });
-  }, [markers, isLoaded]);
+    }
+  }, [markers, markerDescriptions, isLoaded]);
 
   if (loadError) return <div>Error loading map</div>;
   if (!isLoaded) return <div>Loading...</div>;
@@ -100,7 +116,6 @@ export default function MapComponent() {
         options={{
           mapId: import.meta.env.VITE_GOOGLE_MAPS_MAP_ID,
         }}
-        // If user wants to place pin by clicking on the map
         onClick={(e) => {
           setMarkers((prev) => [
             ...prev,
