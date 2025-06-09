@@ -47,19 +47,19 @@ export default function MapComponent() {
     e.preventDefault();
     if (!prompt.trim()) return;
     try {
-      const res = await fetch("http://localhost:5000/api/generate", {
+      // Call backend endpoint that uses getCoords to get coordinates for places
+      const res = await fetch("http://localhost:5000/api/coords", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ prompt }),
       });
-      const dataObj = await res.json();
-      const data = dataObj.json
-      console.log("API response:", data);
-      
-      // Extract coords and set markers
-      if (data.json && typeof data.json === 'object') {
-        const coords = Object.values(data.json)
-          .map(val => Array.isArray(val) && val[0] && typeof val[0] === 'object' ? val[0] : null)
+      const data = await res.json();
+      console.log("Coords API response:", data);
+      // Extract coordinates from the response and set as markers
+      if (data && typeof data === 'object') {
+        // Each value: [tag, comment, [lat, lng], ...]
+        const coords = Object.values(data)
+          .map(val => Array.isArray(val) && Array.isArray(val[2]) ? { lat: Number(val[2][0]), lng: Number(val[2][1]) } : null)
           .filter(Boolean);
         setMarkers(coords);
       }

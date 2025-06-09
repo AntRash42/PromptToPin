@@ -29,6 +29,19 @@ app.post("/api/generate", async (req, res) => {
   }
 });
 
+app.post("/api/coords", async (req, res) => {
+  try {
+    const { prompt } = req.body;
+    if (!prompt) {
+      return res.status(400).json({ error: "Prompt is required" });
+    }
+    const coordsObj = await (await import("./utils/getCoords.js")).default(prompt);
+    res.json(coordsObj);
+  } catch (err) {
+    res.status(500).json({ error: err.message || "Coords error" });
+  }
+});
+
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
