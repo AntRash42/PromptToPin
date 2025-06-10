@@ -23,11 +23,12 @@ async function getData(query) {
         {
           "place-full-name, monument-name, city-name, state-name": [
             "Tag (to classify places into groups, like affected areas, place where the main impact was hit, etc)",
-            "2-3 sentences with context about the place relevant to the query"
+            "2-3 sentences with context about the place relevant to the query",
+            [latitude, longitude] // latitude and longitude as numbers, in a JSON array
           ],
           ...
         }
-        Return only the JSON object. Do not include any explanation, commentary, or markdown formatting. If you cannot answer, return {}.
+        For each place, always include the [latitude, longitude] array as the third element. If you do not know the coordinates, return [null, null]. Return only the JSON object. Do not include any explanation, commentary, or markdown formatting. If you cannot answer, return {}.
     `;
 
     const response = await client.responses.create({
