@@ -115,16 +115,7 @@ export default function MapComponent() {
         onLoad={onLoad}
         options={{
           mapId: import.meta.env.VITE_GOOGLE_MAPS_MAP_ID,
-        }}
-        onClick={(e) => {
-          setMarkers((prev) => [
-            ...prev,
-            {
-              lat: e.latLng.lat(),
-              lng: e.latLng.lng(),
-            },
-          ]);
-        }}
+        }}        
       />
       <div className="mt-4 text-center">
         <form onSubmit={handlePromptSubmit} className="mb-4">

@@ -23,7 +23,7 @@ async function getData(query) {
         {
           "place-full-name, monument-name, city-name, state-name": [
             "Tag (to classify places into groups, like affected areas, place where the main impact was hit, etc)",
-            "2-3 sentences with context about the place relevant to the query",
+            "1-2 sentences with context about the place relevant to the query. 1 sentence not about the place (where applicable) but about the event (such as info mentioning each opponent when asked about Rohit Sharma's double centuries).",
             [latitude, longitude] // latitude and longitude as numbers, in a JSON array
           ],
           ...
