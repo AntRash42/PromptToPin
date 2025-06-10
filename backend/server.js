@@ -1,13 +1,9 @@
 import { configDotenv } from "dotenv";
-import OpenAI from "openai";
 import express from "express";
 import cors from "cors";
 import getFullCoords from "./utils/getCoords.js";
 
 configDotenv();
-const OPENAI_API_KEY = process.env.OPENAI_API_KEY_;
-
-const client = new OpenAI({ apiKey: OPENAI_API_KEY });
 
 const app = express();
 app.use(cors());
