@@ -22,8 +22,7 @@ export default function MapComponent() {
   });
 
   const [markers, setMarkers] = useState([]);
-  const [markerDescriptions, setMarkerDescriptions] = useState([]);
-  const [placeNames, setPlaceNames] = useState([]);
+  const [markerInfo, setMarkerInfo] = useState([]);
   const [prompt, setPrompt] = useState("");
   const [followup, setFollowup] = useState("");
   const [loading, setLoading] = useState(false);
@@ -59,22 +58,25 @@ export default function MapComponent() {
       const data = await res.json();
       if (data && typeof data === 'object') {
         const coords = [];
-        const descriptions = [];
-        const placeNames = [];
-        Object.entries(data).forEach(([place, val]) => {
+        const info = [];
+        for(const rank of Object.keys(data)){
+          // val = [place-name, description, [lat, long]]
+          let val = data[rank];
           if (Array.isArray(val) && Array.isArray(val[2])) {
             const lat = parseFloat(val[2][0]);
             const lng = parseFloat(val[2][1]);
+            let temp = []
             if (!isNaN(lat) && !isNaN(lng)) {
               coords.push({ lat, lng });
-              descriptions.push(val[1] || "");
-              placeNames.push(place);
+              temp.push(rank); // rank
+              temp.push(val[0] || ""); // place-name
+              temp.push(val[1] || ""); // description
+              info.push(temp)
             }
           }
-        });
+        };
         setMarkers(coords);
-        setMarkerDescriptions(descriptions);
-        setPlaceNames(placeNames);
+        setMarkerInfo(info);
       }
     } catch (err) {
       console.error("API error:", err);
@@ -98,22 +100,25 @@ export default function MapComponent() {
       const data = await res.json();
       if (data && typeof data === 'object') {
         const coords = [];
-        const descriptions = [];
-        const placeNames = [];
-        Object.entries(data).forEach(([place, val]) => {
+        const info = [];
+        for(const rank of Object.keys(data)){
+          // val = [place-name, description, [lat, long]]
+          let val = data[rank];
           if (Array.isArray(val) && Array.isArray(val[2])) {
             const lat = parseFloat(val[2][0]);
             const lng = parseFloat(val[2][1]);
+            let temp = []
             if (!isNaN(lat) && !isNaN(lng)) {
               coords.push({ lat, lng });
-              descriptions.push(val[1] || "");
-              placeNames.push(place);
+              temp.push(rank); // rank
+              temp.push(val[0] || ""); // place-name
+              temp.push(val[1] || ""); // description
+              info.push(temp)
             }
           }
-        });
+        };
         setMarkers(coords);
-        setMarkerDescriptions(descriptions);
-        setPlaceNames(placeNames);
+        setMarkerInfo(info);
       }
     } catch (err) {
       console.error("API error:", err);
@@ -130,14 +135,20 @@ export default function MapComponent() {
     if (markers.length > 0) {
       markers.forEach((pos, idx) => {
         if (pos && typeof pos.lat === 'number' && typeof pos.lng === 'number' && !isNaN(pos.lat) && !isNaN(pos.lng)) {
+          const pinElement = new PinElement({
+            glyph: markerInfo[idx][0] || '',
+            glyphColor: 'white'
+          });
           const marker = new AdvancedMarkerElement({
             map: mapRef.current,
             position: pos,
-            title: markerDescriptions[idx] || '',
+            title: markerInfo[idx][1] + ' ' + markerInfo[idx][2] || '',
+            content: pinElement.element
           });
-          if (markerDescriptions[idx] || placeNames[idx]) {
+          console.log(markerInfo)
+          if (markerInfo[idx]) {
             const infoWindow = new window.google.maps.InfoWindow({
-              content: `<div style='max-width:220px;white-space:pre-line;'><b>${placeNames[idx] || ''}</b><br/>${markerDescriptions[idx] || ''}</div>`
+              content: `<div style='max-width:220px;white-space:pre-line;'><br/>${markerInfo[idx][1] + ' ' + markerInfo[idx][2] || ''}</div>`
             });
             marker.addListener('mouseover', () => infoWindow.open({ anchor: marker, map: mapRef.current }));
             marker.addListener('mouseout', () => infoWindow.close());
@@ -146,7 +157,7 @@ export default function MapComponent() {
         }
       });
     }
-  }, [markers, markerDescriptions, placeNames, isLoaded]);
+  }, [markers, markerInfo, isLoaded]);
 
   if (loadError) return <div>Error loading map</div>;
   if (!isLoaded) return <div>Loading...</div>;

@@ -18,12 +18,15 @@ async function getData(query) {
         {apiKey: process.env.OPENAI_API_KEY_}
     );
 
+    // TODO: 
+    // --> Tag (to classify places into groups, like affected areas, place where the main impact was hit, etc)"
+    // have this included in the GPT response
     const complete_prompt = query + `
         \nGiven this query, respond with only a valid JSON object in the following format:
         {
-          "place-full-name, monument-name, city-name, state-name": [
-            "Tag (to classify places into groups, like affected areas, place where the main impact was hit, etc)",
-            "1-2 sentences with context about the place relevant to the query. 1 sentence not about the place (where applicable) but about the event (such as info mentioning each opponent when asked about Rohit Sharma's double centuries).",
+          "Rank if part of a ranked list, otherwise a number in serial order": [
+            "place-name/monument-name/etc.",
+            "1-2 sentences with context about the place relevant to the query. 1 sentence not about the place (where applicable) but about the event (such as info mentioning each opponent when asked about Rohit Sharma's double centuries)."
             [latitude, longitude] // latitude and longitude as numbers, in a JSON array
           ],
           ...

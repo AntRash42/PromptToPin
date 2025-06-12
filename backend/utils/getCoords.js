@@ -30,15 +30,15 @@ async function getFullCoords(prompt) {
             locationObj = JSON.parse(text);
         }
         // Fallback: for each place, if coordinates are missing/null/invalid, fetch from maps.co
-        for (const place of Object.keys(locationObj)) {
-            const arr = locationObj[place];
+        for (const rank of Object.keys(locationObj)) {
+            const arr = locationObj[rank];
             // Expecting arr[2] to be [lat, lon] or undefined
             let coords = arr[2];
             let lat = coords && Array.isArray(coords) ? parseFloat(coords[0]) : null;
             let lon = coords && Array.isArray(coords) ? parseFloat(coords[1]) : null;
             let source = 'gpt';
             if (!lat || !lon || isNaN(lat) || isNaN(lon)) {
-                const [mapsLat, mapsLon] = await fetchCoordsFromMapsCo(place);
+                const [mapsLat, mapsLon] = await fetchCoordsFromMapsCo(arr[0]);
                 if (mapsLat && mapsLon) {
                     arr[2] = [mapsLat, mapsLon];
                     source = 'maps.co';
@@ -48,7 +48,7 @@ async function getFullCoords(prompt) {
                 }
             }
             // Log the coordinates and their source for each place
-            console.log(`Coords for ${place}:`, arr[2], `(source: ${source})`);
+            console.log(`Coords for ${arr[0]}:`, arr[2], `(source: ${source})`);
         }
         return locationObj;
     } catch (error) {
