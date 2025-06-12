@@ -127,6 +127,24 @@ export default function MapComponent() {
     }
   };
 
+function translate(char) {
+  let diff;
+  if (/[A-Z]/.test(char)) {
+    diff = "𝗔".codePointAt(0) - "A".codePointAt(0);
+  }
+  else if (/[a-z]/.test(char)) {
+    diff = "𝗮".codePointAt(0) - "a".codePointAt(0);
+  }
+  else if (/[0-9]/.test(char)) {
+    diff = "𝟬".codePointAt(0) - "0".codePointAt(0);
+  }
+  else {
+    return char;
+  }
+  return String.fromCodePoint(char.codePointAt(0) + diff);
+}
+
+
   useEffect(() => {
     if (!isLoaded || !mapRef.current || !window.google?.maps?.marker) return;
     markerRefs.current.forEach((marker) => marker.setMap(null));
@@ -142,7 +160,7 @@ export default function MapComponent() {
           const marker = new AdvancedMarkerElement({
             map: mapRef.current,
             position: pos,
-            title: markerInfo[idx][1] + ' ' + markerInfo[idx][2] || '',
+            title: markerInfo[idx][1].replace (/[A-Za-z0-9]/g, translate) + ': ' + markerInfo[idx][2] || '',
             content: pinElement.element
           });
           console.log(markerInfo)
