@@ -61,7 +61,7 @@ async function getData(query) {
 \[20.5937, 78.9629]
 ],
 "4": \[
-"S0uth Africa",
+"South Africa",
 "South Africa is an important member of the Commonwealth, with a significant role in promoting peace and democracy. It has a rich history of political transformation, notably ending apartheid and embracing a multicultural society.",
 \[-30.5595, 22.9375]
 ],
