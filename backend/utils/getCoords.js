@@ -1,4 +1,5 @@
 import getData from "./getData.js";
+
 async function fetchCoordsFromMapsCo(placeName) {
     try {
         const url = `https://geocode.maps.co/search?q=${encodeURIComponent(placeName)}&api_key=${process.env.GEO_CODE_API_KEY_}`;
@@ -29,26 +30,23 @@ async function getFullCoords(prompt) {
             if (!text) throw new Error("No output text from getData");
             locationObj = JSON.parse(text);
         }
-        // Fallback: for each place, if coordinates are missing/null/invalid, fetch from maps.co
         for (const rank of Object.keys(locationObj)) {
             const arr = locationObj[rank];
-            // Expecting arr[2] to be [lat, lon] or undefined
-            let coords = arr[2];
+            let coords = arr[3];
             let lat = coords && Array.isArray(coords) ? parseFloat(coords[0]) : null;
             let lon = coords && Array.isArray(coords) ? parseFloat(coords[1]) : null;
             let source = 'gpt';
             if (!lat || !lon || isNaN(lat) || isNaN(lon)) {
                 const [mapsLat, mapsLon] = await fetchCoordsFromMapsCo(arr[0]);
                 if (mapsLat && mapsLon) {
-                    arr[2] = [mapsLat, mapsLon];
+                    arr[3] = [mapsLat, mapsLon];
                     source = 'maps.co';
                 } else {
-                    arr[2] = [null, null];
+                    arr[3] = [null, null];
                     source = 'none';
                 }
             }
-            // Log the coordinates and their source for each place
-            console.log(`Coords for ${arr[0]}:`, arr[2], `(source: ${source})`);
+            console.log(`${arr[0]}: [${arr[3][0]}, ${arr[3][1]}] (${source})`);
         }
         return locationObj;
     } catch (error) {

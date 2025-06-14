@@ -16,6 +16,9 @@ app.post("/api/generate", async (req, res) => {
       return res.status(400).json({ error: "Prompt is required" });
     }
     console.log("Received prompt:", prompt);
+    const dataResponse = await (await import("./utils/getData.js")).default(prompt);
+    console.log("GPT raw response:", dataResponse.raw);
+    console.log("GPT parsed JSON:", dataResponse.json);
     const response = await getFullCoords(prompt);
     console.log("Response from getFullCoords:", response);
     res.json({ output: response.raw, json: response });
@@ -30,6 +33,9 @@ app.post("/api/coords", async (req, res) => {
     if (!prompt) {
       return res.status(400).json({ error: "Prompt is required" });
     }
+    const dataResponse = await (await import("./utils/getData.js")).default(prompt);
+    console.log("GPT raw response (/api/coords):", dataResponse.raw);
+    console.log("GPT parsed JSON (/api/coords):", dataResponse.json);
     const coordsObj = await (await import("./utils/getCoords.js")).default(prompt);
     res.json(coordsObj);
   } catch (err) {
