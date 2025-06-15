@@ -33,6 +33,23 @@ export default function MapComponent() {
     mapRef.current = map;
   }, []);
 
+  function translate(char) {
+    let diff;
+    if (/[A-Z]/.test(char)) {
+      diff = "𝗔".codePointAt(0) - "A".codePointAt(0);
+    }
+    else if (/[a-z]/.test(char)) {
+      diff = "𝗮".codePointAt(0) - "a".codePointAt(0);
+    }
+    else if (/[0-9]/.test(char)) {
+      diff = "𝟬".codePointAt(0) - "0".codePointAt(0);
+    }
+    else {
+      return char;
+    }
+    return String.fromCodePoint(char.codePointAt(0) + diff);
+  }
+
   useEffect(() => {
     if (!isLoaded || !mapRef.current || !window.google?.maps?.marker) return;
     markerRefs.current.forEach((marker) => marker.setMap(null));
@@ -48,20 +65,21 @@ export default function MapComponent() {
             glyphColor: 'white',
             background: bgColour
           });
-          const marker = new AdvancedMarkerElement({
+          const markerObj = new AdvancedMarkerElement({
             map: mapRef.current,
             position: pos,
-            title: markerInfo[idx][1] + ': ' + (markerInfo[idx][3] || ''), // Use description from GPT
+            // title: markerInfo[idx][1] + ': ' + (markerInfo[idx][3] || ''),
+            title: markerInfo[idx][1].replace (/[A-Za-z0-9]/g, translate) + ': ' + markerInfo[idx][3] || '',
             content: pinElement.element
           });
           if (markerInfo[idx]) {
             const infoWindow = new window.google.maps.InfoWindow({
-              content: `<div style='max-width:220px;white-space:pre-line;'><b>${markerInfo[idx][1]}</b><br/>${markerInfo[idx][2] || ''}</div>`
+              content: `<div style='max-width:220px;white-space:pre-line;'><b>${markerInfo[idx][1]}</b><br/>${markerInfo[idx][3] || ''}</div>`
             });
-            marker.addListener('mouseover', () => infoWindow.open({ anchor: marker, map: mapRef.current }));
-            marker.addListener('mouseout', () => infoWindow.close());
+            markerObj.addListener('mouseover', () => infoWindow.open({ anchor: markerObj, map: mapRef.current }));
+            markerObj.addListener('mouseout', () => infoWindow.close());
           }
-          markerRefs.current.push(marker);
+          markerRefs.current.push(markerObj);
         }
       });
     }
@@ -149,61 +167,7 @@ export default function MapComponent() {
       console.error("API error:", err);
     }
   };
-
-<<<<<<< HEAD
-  // Helper to determine if legend should be shown
   const shouldShowLegend = legend.length > 0 && /category|tag|colour|color|group|type/i.test(prompt);
-=======
-function translate(char) {
-  let diff;
-  if (/[A-Z]/.test(char)) {
-    diff = "𝗔".codePointAt(0) - "A".codePointAt(0);
-  }
-  else if (/[a-z]/.test(char)) {
-    diff = "𝗮".codePointAt(0) - "a".codePointAt(0);
-  }
-  else if (/[0-9]/.test(char)) {
-    diff = "𝟬".codePointAt(0) - "0".codePointAt(0);
-  }
-  else {
-    return char;
-  }
-  return String.fromCodePoint(char.codePointAt(0) + diff);
-}
-
-
-  useEffect(() => {
-    if (!isLoaded || !mapRef.current || !window.google?.maps?.marker) return;
-    markerRefs.current.forEach((marker) => marker.setMap(null));
-    markerRefs.current = [];
-    const { AdvancedMarkerElement, PinElement, InfoWindow } = window.google.maps.marker || {};
-    if (markers.length > 0) {
-      markers.forEach((pos, idx) => {
-        if (pos && typeof pos.lat === 'number' && typeof pos.lng === 'number' && !isNaN(pos.lat) && !isNaN(pos.lng)) {
-          const pinElement = new PinElement({
-            glyph: markerInfo[idx][0] || '',
-            glyphColor: 'white'
-          });
-          const marker = new AdvancedMarkerElement({
-            map: mapRef.current,
-            position: pos,
-            title: markerInfo[idx][1].replace (/[A-Za-z0-9]/g, translate) + ': ' + markerInfo[idx][2] || '',
-            content: pinElement.element
-          });
-          console.log(markerInfo)
-          if (markerInfo[idx]) {
-            const infoWindow = new window.google.maps.InfoWindow({
-              content: `<div style='max-width:220px;white-space:pre-line;'><br/>${markerInfo[idx][1] + ' ' + markerInfo[idx][2] || ''}</div>`
-            });
-            marker.addListener('mouseover', () => infoWindow.open({ anchor: marker, map: mapRef.current }));
-            marker.addListener('mouseout', () => infoWindow.close());
-          }
-          markerRefs.current.push(marker);
-        }
-      });
-    }
-  }, [markers, markerInfo, isLoaded]);
->>>>>>> 73a274c35d3e05b1801b8ff1852194d6612d24bb
 
   if (loadError) return <div>Error loading maps</div>;
   if (!isLoaded) return <div>Loading Maps...</div>;
@@ -253,7 +217,6 @@ function translate(char) {
           mapId: import.meta.env.VITE_GOOGLE_MAPS_MAP_ID || undefined
         }}
       >
-        {/* Child components, like markers, will be rendered here */}
       </GoogleMap>
       {/* Legend Table */}
       {shouldShowLegend && (

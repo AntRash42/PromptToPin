@@ -4,13 +4,24 @@ function extractJsonFromText(text) {
     try {
         return JSON.parse(text);
     } catch {}
+    // Try to extract JSON object from text
     const match = text.match(/\{[\s\S]*\}/);
     if (match) {
         try {
             return JSON.parse(match[0]);
         } catch {}
     }
-    return null;
+    // Try to fix common issues: single quotes, trailing commas, escaped brackets
+    let fixed = text
+        .replace(/\'([^']*)\'/g, '"$1"') // single to double quotes
+        .replace(/,\s*([}\]])/g, '$1')    // remove trailing commas
+        .replace(/\\\[/g, '[').replace(/\\\]/g, ']'); // unescape brackets
+    try {
+        return JSON.parse(fixed);
+    } catch (e) {
+        console.error('Failed to parse GPT response as JSON. Raw output:', text);
+        return null;
+    }
 }
 
 async function getData(query) {
@@ -34,7 +45,6 @@ async function getData(query) {
         The key for each entry must be the rank (if ranking is relevant to the query) or a serial number (1, 2, 3, ...) if not. The value array must start with the place name, followed by tag, description, coordinates, color, and citations as above. If you do not know the coordinates, return [null, null]. If you do not have citations, return an empty array. Return only the JSON object. Do not include any explanation, commentary, or markdown formatting. If you cannot answer, return {}.
     `;
     try {
-        throw new Error("Simulated error for testing fallback response");
         const response = await client.responses.create({
             model: "gpt-4o-mini",
             input: complete_prompt
@@ -43,43 +53,8 @@ async function getData(query) {
         return { raw: response.output_text, json };
     } catch (error) {
         console.log(error)
-        const response = `
-        {
-"1": \[
-"Australia",
-"Australia is a prominent member of the Commonwealth of Nations, known for its vast landscapes and strong global influence. It is one of the founding members of the Commonwealth, with its participation in various international and diplomatic events.",
-\[-25.2744, 133.7751]
-],
-"2": \[
-"Canada",
-"Canada, another key member of the Commonwealth, shares close ties with the UK and other Commonwealth nations. It plays a significant role in the organization’s discussions and initiatives, promoting democracy and development.",
-\[56.1304, -106.3468]
-],
-"3": \[
-"India",
-"India, the largest country in the Commonwealth, has a deep historical connection to the British Empire. As a member, it actively participates in Commonwealth events and advocates for development, democracy, and peace.",
-\[20.5937, 78.9629]
-],
-"4": \[
-"South Africa",
-"South Africa is an important member of the Commonwealth, with a significant role in promoting peace and democracy. It has a rich history of political transformation, notably ending apartheid and embracing a multicultural society.",
-\[-30.5595, 22.9375]
-],
-"5": \[
-"Unit3d Kingdom",
-"The United Kingdom is the founding member and the central body of the Commonwealth of Nations. As the origin of the Commonwealth, it continues to host various key events, such as the Commonwealth Games.",
-\[51.5074, -0.1278]
-],
-"6": \[
-"New Zealand",
-"New Zealand, known for its natural beauty and strong cultural ties to the UK, is an active participant in Commonwealth discussions, particularly in areas of trade, education, and environmental sustainability.",
-\[-40.9006, 174.886]
-]
-}
-
-        `
-        const json = extractJsonFromText(response);
-        return { raw: response, json };
+        // Return a valid empty object as fallback to avoid JSON parse errors
+        return { raw: '{}', json: {} };
     }
 }
 
