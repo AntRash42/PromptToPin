@@ -85,52 +85,16 @@ export default function MapComponent() {
     }
   }, [isLoaded, markers, markerInfo]);
 
-  const handlePromptSubmit = async (e) => {
+  // Unified submit handler for both prompt and followup
+  const handleSubmit = async (e, isFollowup = false) => {
     e.preventDefault();
-    if (!prompt.trim()) return;
+    const mainPrompt = prompt.trim();
+    const followupPrompt = followup.trim();
+    if (!mainPrompt && (!isFollowup || !followupPrompt)) return;
     try {
-      const res = await fetch("http://localhost:5000/api/coords", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt }),
-      });
-      const data = await res.json();
-      if (data && typeof data === 'object') {
-        const coords = [];
-        const info = [];
-        const legendMap = new Map();
-        for(const rank of Object.keys(data)){
-          let val = data[rank];
-          if (Array.isArray(val) && Array.isArray(val[3])) {
-            const lat = parseFloat(val[3][0]);
-            const lng = parseFloat(val[3][1]);
-            let temp = [];
-            if (!isNaN(lat) && !isNaN(lng)) {
-              coords.push({ lat, lng });
-              temp.push(rank); // rank
-              temp.push(val[0] || ""); // place-name
-              temp.push(val[1] || ""); // tag/category
-              temp.push(val[2] || ""); // description
-              temp.push(val[4] || "#4285F4"); // colour hex
-              info.push(temp);
-              if (val[1] && val[4]) legendMap.set(val[1], val[4]); // tag/category and colour
-            }
-          }
-        }
-        setMarkers(coords);
-        setMarkerInfo(info);
-        setLegend(Array.from(legendMap.entries()));
-      }
-    } catch (err) {
-      console.error("API error:", err);
-    }
-  };
-
-  const handleFollowupSubmit = async (e) => {
-    e.preventDefault();
-    if (!prompt.trim() && !followup.trim()) return;
-    try {
-      const combinedPrompt = prompt + (followup.trim() ? `\nFollow-up/Correction: ${followup}` : "");
+      const combinedPrompt = isFollowup && followupPrompt
+        ? mainPrompt + `\nFollow-up/Correction: ${followupPrompt}`
+        : mainPrompt;
       const res = await fetch("http://localhost:5000/api/coords", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -138,35 +102,34 @@ export default function MapComponent() {
       });
       const data = await res.json();
       if (data && typeof data === 'object') {
-        const coords = [];
-        const info = [];
+        const markerData = [];
         const legendMap = new Map();
         for(const rank of Object.keys(data)){
           let val = data[rank];
           if (Array.isArray(val) && Array.isArray(val[3])) {
             const lat = parseFloat(val[3][0]);
             const lng = parseFloat(val[3][1]);
-            let temp = [];
             if (!isNaN(lat) && !isNaN(lng)) {
-              coords.push({ lat, lng });
-              temp.push(rank); // rank
-              temp.push(val[0] || ""); // place-name
-              temp.push(val[1] || ""); // tag/category
-              temp.push(val[2] || ""); // description
-              temp.push(val[4] || "#4285F4"); // colour hex
-              info.push(temp);
-              if (val[1] && val[4]) legendMap.set(val[1], val[4]); // tag/category and colour
+              markerData.push([
+                rank,
+                val[0] || "",
+                val[1] || "",
+                val[2] || "",
+                val[4] || "#4285F4"
+              ]);
+              if (val[1] && val[4]) legendMap.set(val[1], val[4]);
             }
           }
         }
-        setMarkers(coords);
-        setMarkerInfo(info);
+        setMarkers(markerData.map(m => ({ lat: parseFloat(data[m[0]][3][0]), lng: parseFloat(data[m[0]][3][1]) })));
+        setMarkerInfo(markerData);
         setLegend(Array.from(legendMap.entries()));
       }
     } catch (err) {
       console.error("API error:", err);
     }
   };
+
   const shouldShowLegend = legend.length > 0 && /category|tag|colour|color|group|type/i.test(prompt);
 
   if (loadError) return <div>Error loading maps</div>;
@@ -175,7 +138,7 @@ export default function MapComponent() {
   return (
     <div>
       <div className="mt-4 text-center">
-        <form onSubmit={handlePromptSubmit} className="mb-4">
+        <form onSubmit={handleSubmit} className="mb-4">
           <textarea
             value={prompt}
             onChange={e => setPrompt(e.target.value)}
@@ -191,7 +154,7 @@ export default function MapComponent() {
             Send Prompt
           </button>
         </form>
-        <form onSubmit={handleFollowupSubmit} className="mb-4">
+        <form onSubmit={e => handleSubmit(e, true)} className="mb-4">
           <textarea
             value={followup}
             onChange={e => setFollowup(e.target.value)}
