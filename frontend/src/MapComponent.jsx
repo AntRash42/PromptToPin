@@ -1,5 +1,16 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { GoogleMap, useLoadScript } from '@react-google-maps/api';
+import Button from '@mui/material/Button';
+import TextField from '@mui/material/TextField';
+import Paper from '@mui/material/Paper';
+import Typography from '@mui/material/Typography';
+import Table from '@mui/material/Table';
+import TableBody from '@mui/material/TableBody';
+import TableCell from '@mui/material/TableCell';
+import TableContainer from '@mui/material/TableContainer';
+import TableHead from '@mui/material/TableHead';
+import TableRow from '@mui/material/TableRow';
+import Box from '@mui/material/Box';
 
 const libraries = ['marker'];
 
@@ -131,62 +142,74 @@ export default function MapComponent() {
   if (!isLoaded) return <div>Loading Maps...</div>;
 
   return (
-    <div>
-      <div className="mt-4 text-center">
-        <form onSubmit={handleSubmit} className="mb-4">
-          <textarea
+    <Box sx={{ minHeight: '100vh', bgcolor: 'linear-gradient(135deg, #e3f2fd 0%, #e0f7fa 100%)', py: 6, px: 2 }}>
+      <Paper elevation={6} sx={{ maxWidth: 700, mx: 'auto', p: 4, mb: 5, borderRadius: 4 }}>
+        <Typography variant="h3" align="center" color="primary" fontWeight={800} gutterBottom>
+          Prompt to Pin 🌍
+        </Typography>
+        <Box component="form" onSubmit={handleSubmit} sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 2 }}>
+          <TextField
             value={prompt}
             onChange={e => setPrompt(e.target.value)}
-            placeholder="Enter your prompt here..."
-            rows={3}
-            className="w-full max-w-xl p-2 border rounded mb-2"
+            placeholder="Type your world query here..."
+            multiline
+            minRows={3}
+            maxRows={6}
+            fullWidth
+            variant="outlined"
+            sx={{ mb: 2, bgcolor: '#f0f7fa', borderRadius: 2 }}
+            InputProps={{ style: { fontSize: 18 } }}
           />
-          <br />
-          <button
+          <Button
             type="submit"
-            className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 mr-2"
+            variant="contained"
+            size="large"
+            sx={{ px: 6, py: 1.5, fontWeight: 700, fontSize: 18, borderRadius: 2, background: 'linear-gradient(90deg, #43e97b 0%, #38f9d7 100%)', color: '#fff', boxShadow: 3, '&:hover': { background: 'linear-gradient(90deg, #38f9d7 0%, #43e97b 100%)' } }}
           >
-            Send Prompt
-          </button>
-        </form>
-      </div>
-      <GoogleMap
-        onLoad={onLoad}
-        zoom={zoom}
-        center={center}
-        mapContainerStyle={containerStyle}
-        options={{
-          mapId: import.meta.env.VITE_GOOGLE_MAPS_MAP_ID || undefined
-        }}
-      >
-      </GoogleMap>
-      {/* Legend Table */}
-      {shouldShowLegend && (
-        <div className="mt-6 flex justify-center">
-          <div>
-            <div className="font-bold text-lg mb-2">Legend</div>
-            <table className="table-auto border-collapse border border-gray-400 bg-white">
-              <thead>
-                <tr>
-                  <th className="border border-gray-400 px-4 py-2">Category</th>
-                  <th className="border border-gray-400 px-4 py-2">Colour</th>
-                </tr>
-              </thead>
-              <tbody>
+            🌐 Generate Map
+          </Button>
+        </Box>
+      </Paper>
+      <Paper elevation={4} sx={{ maxWidth: 1200, mx: 'auto', p: 2, borderRadius: 4, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+        <Box sx={{ width: '100%', height: 500, borderRadius: 4, overflow: 'hidden', mb: 3 }}>
+          <GoogleMap
+            onLoad={onLoad}
+            zoom={zoom}
+            center={center}
+            mapContainerStyle={{ width: '100%', height: '100%' }}
+            options={{
+              mapId: import.meta.env.VITE_GOOGLE_MAPS_MAP_ID || undefined
+            }}
+          >
+          </GoogleMap>
+        </Box>
+        {shouldShowLegend && (
+          <TableContainer component={Paper} sx={{ maxWidth: 500, mx: 'auto', mt: 2, borderRadius: 2, boxShadow: 2 }}>
+            <Typography variant="h5" align="center" color="primary" fontWeight={700} sx={{ mt: 2 }}>
+              Legend
+            </Typography>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell align="center" sx={{ fontWeight: 700, color: '#1976d2', fontSize: 18 }}>Category</TableCell>
+                  <TableCell align="center" sx={{ fontWeight: 700, color: '#1976d2', fontSize: 18 }}>Colour</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
                 {legend.map(([cat, colour], idx) => (
-                  <tr key={idx}>
-                    <td className="border border-gray-400 px-4 py-2 font-semibold">{cat}</td>
-                    <td className="border border-gray-400 px-4 py-2">
-                      <span style={{ display: 'inline-block', width: 24, height: 24, background: colour, borderRadius: 4, border: '1px solid #888' }}></span>
-                      <span className="ml-2">{colour}</span>
-                    </td>
-                  </tr>
+                  <TableRow key={idx}>
+                    <TableCell align="center" sx={{ fontWeight: 600, color: '#1976d2', fontSize: 16 }}>{cat}</TableCell>
+                    <TableCell align="center">
+                      <Box component="span" sx={{ display: 'inline-block', width: 28, height: 28, background: colour, borderRadius: 2, border: '2px solid #1976d2', verticalAlign: 'middle', mr: 2 }} />
+                      <Typography component="span" sx={{ color: '#1976d2', fontFamily: 'monospace', fontSize: 16 }}>{colour}</Typography>
+                    </TableCell>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-    </div>
+              </TableBody>
+            </Table>
+          </TableContainer>
+        )}
+      </Paper>
+    </Box>
   );
 }
