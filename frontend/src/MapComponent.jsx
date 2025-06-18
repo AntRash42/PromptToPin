@@ -25,7 +25,6 @@ export default function MapComponent() {
   const [markerInfo, setMarkerInfo] = useState([]);
   const [legend, setLegend] = useState([]);
   const [prompt, setPrompt] = useState('');
-  const [followup, setFollowup] = useState('');
   const mapRef = useRef(null);
   const markerRefs = useRef([]);
 
@@ -85,20 +84,16 @@ export default function MapComponent() {
     }
   }, [isLoaded, markers, markerInfo]);
 
-  // Unified submit handler for both prompt and followup
-  const handleSubmit = async (e, isFollowup = false) => {
+  // Only keep the main prompt submit handler
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const mainPrompt = prompt.trim();
-    const followupPrompt = followup.trim();
-    if (!mainPrompt && (!isFollowup || !followupPrompt)) return;
+    if (!mainPrompt) return;
     try {
-      const combinedPrompt = isFollowup && followupPrompt
-        ? mainPrompt + `\nFollow-up/Correction: ${followupPrompt}`
-        : mainPrompt;
       const res = await fetch("http://localhost:5000/api/coords", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt: combinedPrompt }),
+        body: JSON.stringify({ prompt: mainPrompt }),
       });
       const data = await res.json();
       if (data && typeof data === 'object') {
@@ -152,22 +147,6 @@ export default function MapComponent() {
             className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 mr-2"
           >
             Send Prompt
-          </button>
-        </form>
-        <form onSubmit={e => handleSubmit(e, true)} className="mb-4">
-          <textarea
-            value={followup}
-            onChange={e => setFollowup(e.target.value)}
-            placeholder="Enter a correction, query, or follow-up here..."
-            rows={2}
-            className="w-full max-w-xl p-2 border rounded mb-2"
-          />
-          <br />
-          <button
-            type="submit"
-            className="px-4 py-2 bg-yellow-600 text-white rounded hover:bg-yellow-700 mr-2"
-          >
-            Send Follow-up
           </button>
         </form>
       </div>
