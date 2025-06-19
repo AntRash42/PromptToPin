@@ -11,6 +11,9 @@ import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Box from '@mui/material/Box';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import IconButton from '@mui/material/IconButton';
+import Tooltip from '@mui/material/Tooltip';
 
 const libraries = ['marker'];
 
@@ -121,18 +124,75 @@ export default function MapComponent() {
                 val[0] || "",
                 val[1] || "",
                 val[2] || "",
-                val[4] || "#4285F4"
+                val[4] || "#4285F4",
+                [lat, lng] // Save coordinates as a separate entry
               ]);
               if (val[1] && val[4]) legendMap.set(val[1], val[4]);
             }
           }
         }
-        setMarkers(markerData.map(m => ({ lat: parseFloat(data[m[0]][3][0]), lng: parseFloat(data[m[0]][3][1]) })));
+        setMarkers(markerData.map(m => ({ lat: m[5][0], lng: m[5][1] })));
         setMarkerInfo(markerData);
         setLegend(Array.from(legendMap.entries()));
       }
     } catch (err) {
       console.error("API error:", err);
+    }
+  };
+
+  function encodeMapState(prompt, markerInfo) {
+    try {
+      const state = JSON.stringify({ prompt, markerInfo });
+      return btoa(encodeURIComponent(state));
+    } catch {
+      return '';
+    }
+  }
+  function decodeMapState(encoded) {
+    try {
+      const state = decodeURIComponent(atob(encoded));
+      return JSON.parse(state);
+    } catch {
+      return null;
+    }
+  }
+
+  // Store decoded state from URL if present already
+  const [pendingMapState, setPendingMapState] = useState(null);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const encoded = params.get('map');
+    if (encoded) {
+      const state = decodeMapState(encoded);
+      if (state && state.prompt && Array.isArray(state.markerInfo)) {
+        setPendingMapState(state);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    if (isLoaded && pendingMapState) {
+      setPrompt(pendingMapState.prompt);
+      setMarkerInfo(pendingMapState.markerInfo);
+      setMarkers(pendingMapState.markerInfo.map(m => ({ lat: m[5][0], lng: m[5][1] })));
+      setPendingMapState(null); // Clear after applying
+    }
+  }, [isLoaded, pendingMapState]);
+
+  // Share button handler with TinyURL shortening
+  const handleShare = async () => {
+    const encoded = encodeMapState(prompt, markerInfo);
+    const longUrl = `${window.location.origin}${window.location.pathname}?map=${encoded}`;
+    try {
+      const resp = await fetch(`https://tinyurl.com/api-create.php?url=${encodeURIComponent(longUrl)}`);
+      const shortUrl = await resp.text();
+      await navigator.clipboard.writeText(shortUrl);
+      alert('Shortened map URL copied to clipboard!');
+    } catch (err) {
+      // fallback to long url if shortener fails
+      await navigator.clipboard.writeText(longUrl);
+      alert('Shareable map URL copied to clipboard! (Shortener failed)');
     }
   };
 
@@ -209,6 +269,13 @@ export default function MapComponent() {
             </Table>
           </TableContainer>
         )}
+        <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
+          <Tooltip title="Copy shareable map URL">
+            <IconButton color="primary" onClick={handleShare} size="large">
+              <ContentCopyIcon fontSize="inherit" />
+            </IconButton>
+          </Tooltip>
+        </Box>
       </Paper>
     </Box>
   );
