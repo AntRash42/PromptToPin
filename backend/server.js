@@ -33,10 +33,9 @@ app.post("/api/coords", async (req, res) => {
     if (!prompt) {
       return res.status(400).json({ error: "Prompt is required" });
     }
-    const dataResponse = await (await import("./utils/getData.js")).default(prompt);
-    console.log("GPT raw response (/api/coords):", dataResponse.raw);
-    console.log("GPT parsed JSON (/api/coords):", dataResponse.json);
+    console.log("Received prompt for coords:", prompt);
     const coordsObj = await (await import("./utils/getCoords.js")).default(prompt);
+    console.log("Coords object:", coordsObj);
     res.json(coordsObj);
   } catch (err) {
     res.status(500).json({ error: err.message || "Coords error" });

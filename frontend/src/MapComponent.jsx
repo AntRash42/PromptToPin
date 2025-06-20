@@ -109,10 +109,16 @@ export default function MapComponent() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ prompt: mainPrompt }),
       });
-      const data = await res.json();
+      console.log("API response:", res);
+      const parsed = await res.json();
+      const response = parsed.json;
+      console.log("Parsed response:", response);
+      const data = response.places;
+      console.log("Location data:", data);
+      console.log("Legend data:", response.legend);
       if (data && typeof data === 'object') {
         const markerData = [];
-        const legendMap = new Map();
+        // const legendMap = new Map();
         for(const rank of Object.keys(data)){
           let val = data[rank];
           if (Array.isArray(val) && Array.isArray(val[3])) {
@@ -127,13 +133,14 @@ export default function MapComponent() {
                 val[4] || "#4285F4",
                 [lat, lng] // Save coordinates as a separate entry
               ]);
-              if (val[1] && val[4]) legendMap.set(val[1], val[4]);
+              // if (val[1] && val[4]) legendMap.set(val[1], val[4]);
             }
           }
         }
         setMarkers(markerData.map(m => ({ lat: m[5][0], lng: m[5][1] })));
         setMarkerInfo(markerData);
-        setLegend(Array.from(legendMap.entries()));
+        // console.log("legendMap: ", legendMap);
+        setLegend(Object.entries(response.legend));
       }
     } catch (err) {
       console.error("API error:", err);
@@ -196,7 +203,7 @@ export default function MapComponent() {
     }
   };
 
-  const shouldShowLegend = legend.length > 0 && /category|tag|colour|color|group|type/i.test(prompt);
+  const shouldShowLegend = legend.length > 0 // && /category|tag|colour|color|group|type/i.test(prompt);
 
   if (loadError) return <div>Error loading maps</div>;
   if (!isLoaded) return <div>Loading Maps...</div>;

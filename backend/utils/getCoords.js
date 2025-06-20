@@ -22,9 +22,10 @@ async function fetchCoordsFromMapsCo(placeName) {
 async function getFullCoords(prompt) {
     try {
         const dataResponse = await getData(prompt);
+        // console.log("Raw response from GPT:", dataResponse.json);
         let locationObj;
         if (dataResponse.json) {
-            locationObj = dataResponse.json;
+            locationObj = dataResponse.json.places; //Cuz now the places is the sub-object(?) of the response
         } else {
             const text = dataResponse.raw || dataResponse.output_text;
             if (!text) throw new Error("No output text from getData");
@@ -48,7 +49,8 @@ async function getFullCoords(prompt) {
             }
             console.log(`${arr[0]}: [${arr[3][0]}, ${arr[3][1]}] (${source})`);
         }
-        return locationObj;
+        dataResponse.json.places = locationObj; //Assigning the modified locationObj back to the dataResponse
+        return dataResponse;
     } catch (error) {
         console.error("Error in getFullCoords:", error);
     }
