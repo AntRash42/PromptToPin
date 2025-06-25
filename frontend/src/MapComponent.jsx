@@ -14,6 +14,21 @@ import Box from '@mui/material/Box';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import IconButton from '@mui/material/IconButton';
 import Tooltip from '@mui/material/Tooltip';
+import Dialog from '@mui/material/Dialog';
+import DialogTitle from '@mui/material/DialogTitle';
+import DialogContent from '@mui/material/DialogContent';
+import DialogActions from '@mui/material/DialogActions';
+import { useAuth } from './AuthContext';
+import { getAuth } from 'firebase/auth';
+import Drawer from '@mui/material/Drawer';
+import List from '@mui/material/List';
+import ListItem from '@mui/material/ListItem';
+import ListItemIcon from '@mui/material/ListItemIcon';
+import ListItemText from '@mui/material/ListItemText';
+import Divider from '@mui/material/Divider';
+import MenuIcon from '@mui/icons-material/Menu';
+import MapIcon from '@mui/icons-material/Map';
+import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 
 const libraries = ['marker'];
 
@@ -45,6 +60,48 @@ export default function MapComponent() {
   const onLoad = useCallback((map) => {
     mapRef.current = map;
   }, []);
+
+  const { user, signOut } = useAuth();
+  const [saveDialogOpen, setSaveDialogOpen] = useState(false);
+  const [mapName, setMapName] = useState(prompt);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [myMaps, setMyMaps] = useState([]);
+  const [showMyMaps, setShowMyMaps] = useState(false);
+
+  const handleOpenSaveDialog = () => {
+    setMapName(prompt);
+    setSaveDialogOpen(true);
+  };
+  const handleCloseSaveDialog = () => setSaveDialogOpen(false);
+
+  const handleSaveMap = async () => {
+    if (!user) return;
+    // Generate shareable TinyURL
+    const encoded = encodeMapState(prompt, markerInfo);
+    const longUrl = `${window.location.origin}${window.location.pathname}?map=${encoded}`;
+    let shareUrl = longUrl;
+    try {
+      const resp = await fetch(`https://tinyurl.com/api-create.php?url=${encodeURIComponent(longUrl)}`);
+      shareUrl = await resp.text();
+    } catch {}
+    const token = await getAuth().currentUser.getIdToken();
+    await fetch("http://localhost:5000/api/maps", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        save: true,
+        name: mapName,
+        prompt,
+        markerInfo,
+        shareUrl,
+      }),
+    });
+    setSaveDialogOpen(false);
+    alert("Map saved!");
+  };
 
   function translate(char) {
     let diff;
@@ -205,11 +262,72 @@ export default function MapComponent() {
 
   const shouldShowLegend = legend.length > 0 // && /category|tag|colour|color|group|type/i.test(prompt);
 
+  // Fetch user's maps when My Maps is opened
+  const fetchMyMaps = async () => {
+    const token = await getAuth().currentUser.getIdToken();
+    const res = await fetch("http://localhost:5000/api/maps", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({}),
+    });
+    const data = await res.json();
+    setMyMaps(data.maps || []);
+  };
+
+  // Delete a map by id
+  const handleDeleteMap = async (mapId) => {
+    if (!user || !mapId) return;
+    const token = await getAuth().currentUser.getIdToken();
+    await fetch(`http://localhost:5000/api/maps/${mapId}`, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    // Refresh maps list
+    await fetchMyMaps();
+  };
+
   if (loadError) return <div>Error loading maps</div>;
   if (!isLoaded) return <div>Loading Maps...</div>;
 
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: 'linear-gradient(135deg, #e3f2fd 0%, #e0f7fa 100%)', py: 6, px: 2 }}>
+      {/* Sidebar Drawer for logged-in users */}
+      {user && (
+        <>
+          <IconButton onClick={() => setDrawerOpen(true)} sx={{ position: 'absolute', top: 24, left: 32, zIndex: 20 }}>
+            <MenuIcon fontSize="large" />
+          </IconButton>
+          <Drawer anchor="left" open={drawerOpen} onClose={() => setDrawerOpen(false)}>
+            <Box sx={{ width: 240 }} role="presentation" onClick={() => setDrawerOpen(false)}>
+              <List>
+                <ListItem button key="My Maps" onClick={async () => { setShowMyMaps(true); await fetchMyMaps(); }}>
+                  <ListItemIcon><MapIcon /></ListItemIcon>
+                  <ListItemText primary="My Maps" />
+                </ListItem>
+                <ListItem button key="Profile">
+                  <ListItemIcon><AccountCircleIcon /></ListItemIcon>
+                  <ListItemText primary="Profile" />
+                </ListItem>
+              </List>
+              <Divider />
+            </Box>
+          </Drawer>
+        </>
+      )}
+      {/* Sign Out button for logged-in users */}
+      {user && (
+        <Box sx={{ position: 'absolute', top: 24, right: 32, zIndex: 10 }}>
+          <Button variant="outlined" color="error" onClick={signOut} sx={{ fontWeight: 700 }}>
+            Sign Out
+          </Button>
+        </Box>
+      )}
       <Paper elevation={6} sx={{ maxWidth: 700, mx: 'auto', p: 4, mb: 5, borderRadius: 4 }}>
         <Typography variant="h3" align="center" color="primary" fontWeight={800} gutterBottom>
           Prompt to Pin 🌍
@@ -283,7 +401,71 @@ export default function MapComponent() {
             </IconButton>
           </Tooltip>
         </Box>
+        {user ? (
+          <Button onClick={handleOpenSaveDialog} variant="contained" color="secondary">Save Map</Button>
+        ) : (
+          <Typography color="error" align="center" sx={{ mt: 2 }}>
+            You are using without logging in anonymously. To save your prompts and maps, <a href="/login">log in</a> or <a href="/signup">create an account</a>.
+          </Typography>
+        )}
+        <Dialog open={saveDialogOpen} onClose={handleCloseSaveDialog}>
+          <DialogTitle>Save Map</DialogTitle>
+          <DialogContent>
+            <TextField
+              label="Map Name"
+              value={mapName}
+              onChange={e => setMapName(e.target.value)}
+              fullWidth
+              autoFocus
+            />
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleCloseSaveDialog}>Cancel</Button>
+            <Button onClick={handleSaveMap} variant="contained">Save</Button>
+          </DialogActions>
+        </Dialog>
       </Paper>
+      {/* My Maps Dialog */}
+      <Dialog open={showMyMaps} onClose={() => setShowMyMaps(false)} maxWidth="md" fullWidth>
+        <DialogTitle>My Maps</DialogTitle>
+        <DialogContent>
+          {myMaps.length === 0 ? (
+            <Typography>No saved maps found.</Typography>
+          ) : (
+            <TableContainer component={Paper}>
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Name</TableCell>
+                    <TableCell>Prompt</TableCell>
+                    <TableCell>Share Link</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {myMaps.map((map, idx) => (
+                    <TableRow key={map.id || idx}>
+                      <TableCell>{map.name}</TableCell>
+                      <TableCell>{map.prompt}</TableCell>
+                      <TableCell>
+                        <Button size="small" color="primary" onClick={() => navigator.clipboard.writeText(map.shareUrl)}>
+                          Copy Link
+                        </Button>
+                        <a href={map.shareUrl} target="_blank" rel="noopener noreferrer">Open</a>
+                        <Button size="small" color="error" onClick={() => handleDeleteMap(map.id)} style={{ marginLeft: 8 }}>
+                          Delete
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setShowMyMaps(false)}>Close</Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

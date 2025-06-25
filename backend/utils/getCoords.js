@@ -31,6 +31,10 @@ async function getFullCoords(prompt) {
             if (!text) throw new Error("No output text from getData");
             locationObj = JSON.parse(text);
         }
+        if (!locationObj || typeof locationObj !== 'object') {
+            console.error("getFullCoords: Invalid or missing locationObj:", locationObj);
+            return { error: 'No places data returned from prompt.' };
+        }
         for (const rank of Object.keys(locationObj)) {
             const arr = locationObj[rank];
             let coords = arr[3];
@@ -53,6 +57,7 @@ async function getFullCoords(prompt) {
         return dataResponse;
     } catch (error) {
         console.error("Error in getFullCoords:", error);
+        return { error: error.message || 'Unknown error in getFullCoords' };
     }
 }
 
