@@ -77,7 +77,7 @@ export default function MapComponent() {
   const handleSaveMap = async () => {
     if (!user) return;
     // Generate shareable TinyURL
-    const encoded = encodeMapState(prompt, markerInfo);
+    const encoded = encodeMapState(prompt, markerInfo, legend);
     const longUrl = `${window.location.origin}${window.location.pathname}?map=${encoded}`;
     let shareUrl = longUrl;
     try {
@@ -204,9 +204,9 @@ export default function MapComponent() {
     }
   };
 
-  function encodeMapState(prompt, markerInfo) {
+  function encodeMapState(prompt, markerInfo, legend) {
     try {
-      const state = JSON.stringify({ prompt, markerInfo });
+      const state = JSON.stringify({ prompt, markerInfo, legend });
       return btoa(encodeURIComponent(state));
     } catch {
       return '';
@@ -240,13 +240,16 @@ export default function MapComponent() {
       setPrompt(pendingMapState.prompt);
       setMarkerInfo(pendingMapState.markerInfo);
       setMarkers(pendingMapState.markerInfo.map(m => ({ lat: m[5][0], lng: m[5][1] })));
+        if (Array.isArray(pendingMapState.legend)) {
+          setLegend(pendingMapState.legend);
+        }
       setPendingMapState(null); // Clear after applying
     }
   }, [isLoaded, pendingMapState]);
 
   // Share button handler with TinyURL shortening
   const handleShare = async () => {
-    const encoded = encodeMapState(prompt, markerInfo);
+    const encoded = encodeMapState(prompt, markerInfo, legend);
     const longUrl = `${window.location.origin}${window.location.pathname}?map=${encoded}`;
     try {
       const resp = await fetch(`https://tinyurl.com/api-create.php?url=${encodeURIComponent(longUrl)}`);
