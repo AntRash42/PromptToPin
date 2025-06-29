@@ -11,7 +11,6 @@ export function AuthProvider({ children }) {
     const auth = getAuth(app);
     return onAuthStateChanged(auth, (u) => {
       setUser(u);
-      console.log("[AuthContext] Firebase user:", u);
     });
   }, []);
   return <AuthContext.Provider value={{ user, signOut: () => signOut(getAuth(app)) }}>{children}</AuthContext.Provider>;

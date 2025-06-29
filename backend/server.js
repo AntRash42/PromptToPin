@@ -11,9 +11,6 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// firestore db write test
-admin.firestore().collection("test").add({ hello: "world", ts: Date.now() });
-
 app.post("/api/maps", firebaseAuth, async(req, res) => {
   const userId = req.user.uid;
   const db = admin.firestore();
